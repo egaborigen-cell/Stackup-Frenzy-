@@ -48,7 +48,7 @@ const bannerHtmlPrompt = ai.definePrompt({
   5. Use a color palette consistent with the {{style}} aesthetic.
   6. Add a "PLAY NOW ON {{platform}}" call-to-action button.
   7. Ensure the design is clean, professional, and looks like a real App Store / Yandex Games banner.
-  8. Return only the full HTML code.`,
+  8. Return only the full HTML code. Do NOT wrap it in markdown code blocks.`,
 });
 
 /**
@@ -70,6 +70,18 @@ const generatePromoFlow = ai.defineFlow(
         // Step 1: Generate the layout with Gemini
         const { output } = await bannerHtmlPrompt(input);
         
+        if (!output || !output.html) {
+          throw new Error('AI failed to generate HTML layout.');
+        }
+
+        // Clean any potential markdown wrapping
+        let cleanHtml = output.html.trim();
+        if (cleanHtml.startsWith('```html')) {
+          cleanHtml = cleanHtml.replace(/^```html/, '').replace(/```$/, '');
+        } else if (cleanHtml.startsWith('```')) {
+          cleanHtml = cleanHtml.replace(/^```/, '').replace(/```$/, '');
+        }
+        
         // Step 2: Render with Puppeteer
         const browser = await puppeteer.launch({
           headless: true,
@@ -79,13 +91,17 @@ const generatePromoFlow = ai.defineFlow(
         try {
           const page = await browser.newPage();
           await page.setViewport({ width: 1200, height: 630 });
-          await page.setContent(output!.html, { waitUntil: 'networkidle0' });
+          // Set content and wait for fonts/images to load
+          await page.setContent(cleanHtml, { waitUntil: 'networkidle0' });
           
           const screenshot = await page.screenshot({ type: 'png', encoding: 'base64' });
           return { 
             url: `data:image/png;base64,${screenshot}`, 
             type: 'image' 
           };
+        } catch (renderError: any) {
+          console.error('Puppeteer Render Error:', renderError);
+          return { type: 'image', error: `Rendering failed: ${renderError.message}` };
         } finally {
           await browser.close();
         }
@@ -107,7 +123,7 @@ const generatePromoFlow = ai.defineFlow(
         if (!operation) throw new Error('Expected the model to return an operation');
 
         let attempts = 0;
-        const maxAttempts = 24; // 2 minutes max
+        const maxAttempts = 24; // 2 minutes max (5s * 24)
         while (!operation.done && attempts < maxAttempts) {
           operation = await ai.checkOperation(operation);
           if (!operation.done) {
@@ -145,6 +161,7 @@ const generatePromoFlow = ai.defineFlow(
         };
       }
     } catch (err: any) {
+      console.error('Promo Generation Flow Error:', err);
       return { 
         type: input.materialType, 
         error: err.message || 'An error occurred during generation' 
