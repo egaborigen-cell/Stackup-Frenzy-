@@ -34,54 +34,77 @@ const generatePromoFlow = ai.defineFlow(
     }),
   },
   async (input) => {
-    if (input.materialType === 'image') {
-      const { media } = await ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `High-end professional 3D marketing banner for a game called 'StackUp Frenzy'. The visual features a beautiful tower of vibrant, colorful isometric blocks stacking high into a clear sky. Professional game lighting, ${input.style} aesthetic. Designed specifically for a ${input.platform} game storefront. No UI text, just pure high-quality game art.`,
-      });
-      
-      if (!media) return { type: 'image', error: 'Failed to generate image' };
-      return { url: media.url, type: 'image' };
-    } else {
-      // Video generation with Veo 3.0 (includes sound)
-      let { operation } = await ai.generate({
-        model: googleAI.model('veo-3.0-generate-preview'),
-        prompt: `A dynamic, high-energy gameplay trailer for 'StackUp Frenzy'. Show a spinning tower where colorful glowing blocks are being dropped and perfectly stacked with satisfying particle effects. Use ${input.style} lighting. The camera pans around the growing tower. Professional sound design with upbeat game music and block-stacking sound effects. Optimized for ${input.platform} promo video.`,
-      });
+    const safetySettings: any = [
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+    ];
 
-      if (!operation) throw new Error('Expected the model to return an operation');
+    try {
+      if (input.materialType === 'image') {
+        const { media } = await ai.generate({
+          model: 'googleai/imagen-4.0-fast-generate-001',
+          prompt: `High-end professional 3D marketing banner for a game called 'StackUp Frenzy'. The visual features a beautiful tower of vibrant, colorful isometric blocks stacking high into a clear sky. Professional game lighting, ${input.style} aesthetic. Designed specifically for a ${input.platform} game storefront. No UI text, just pure high-quality game art.`,
+          config: { safetySettings },
+        });
+        
+        if (!media) return { type: 'image', error: 'Failed to generate image' };
+        return { url: media.url, type: 'image' };
+      } else {
+        // Video generation with Veo 3.0 (includes sound)
+        let { operation } = await ai.generate({
+          model: googleAI.model('veo-3.0-generate-preview'),
+          prompt: `A dynamic, high-energy gameplay trailer for 'StackUp Frenzy'. Show a spinning tower where colorful glowing blocks are being dropped and perfectly stacked with satisfying particle effects. Use ${input.style} lighting. The camera pans around the growing tower. Professional sound design with upbeat game music and block-stacking sound effects. Optimized for ${input.platform} promo video.`,
+          config: { safetySettings },
+        });
 
-      // Poll for completion (video generation can take 30-60s)
-      while (!operation.done) {
-        operation = await ai.checkOperation(operation);
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        if (!operation) throw new Error('Expected the model to return an operation');
+
+        // Poll for completion (video generation can take 30-60s)
+        let attempts = 0;
+        const maxAttempts = 24; // 2 minutes max
+        while (!operation.done && attempts < maxAttempts) {
+          operation = await ai.checkOperation(operation);
+          if (!operation.done) {
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+            attempts++;
+          }
+        }
+
+        if (attempts >= maxAttempts) {
+          return { type: 'video', error: 'Video generation timed out. Please try again.' };
+        }
+
+        if (operation.error) {
+          return { type: 'video', error: operation.error.message };
+        }
+
+        const videoPart = operation.output?.message?.content.find((p) => !!p.media);
+        if (!videoPart || !videoPart.media) {
+          return { type: 'video', error: 'Failed to find the generated video content' };
+        }
+
+        // Download and convert to data URI for simple client-side handling
+        const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
+        const videoDownloadResponse = await fetch(`${videoPart.media.url}&key=${apiKey}`);
+        
+        if (!videoDownloadResponse.ok) {
+          return { type: 'video', error: `Failed to fetch video data: ${videoDownloadResponse.statusText}` };
+        }
+
+        const buffer = await videoDownloadResponse.arrayBuffer();
+        const base64Video = Buffer.from(buffer).toString('base64');
+        
+        return { 
+          url: `data:video/mp4;base64,${base64Video}`, 
+          type: 'video' 
+        };
       }
-
-      if (operation.error) {
-        return { type: 'video', error: operation.error.message };
-      }
-
-      const videoPart = operation.output?.message?.content.find((p) => !!p.media);
-      if (!videoPart || !videoPart.media) {
-        return { type: 'video', error: 'Failed to find the generated video content' };
-      }
-
-      // Download and convert to data URI for simple client-side handling
-      const fetch = (await import('node-fetch')).default;
-      const videoDownloadResponse = await fetch(
-        `${videoPart.media.url}&key=${process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY}`
-      );
-      
-      if (!videoDownloadResponse.ok) {
-        return { type: 'video', error: 'Failed to fetch video data' };
-      }
-
-      const buffer = await videoDownloadResponse.arrayBuffer();
-      const base64Video = Buffer.from(buffer).toString('base64');
-      
+    } catch (err: any) {
       return { 
-        url: `data:video/mp4;base64,${base64Video}`, 
-        type: 'video' 
+        type: input.materialType, 
+        error: err.message || 'An error occurred during generation' 
       };
     }
   }
