@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { LanguageProvider } from '@/components/LanguageContext';
 
 export const metadata: Metadata = {
   title: 'StackUp Frenzy',
@@ -21,7 +22,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased selection:bg-primary/30">
         <FirebaseClientProvider>
-          {children}
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
         </FirebaseClientProvider>
       </body>
     </html>

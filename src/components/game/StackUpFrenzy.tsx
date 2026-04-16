@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Trophy, Play, RotateCcw, Zap, Rocket, ListOrdered } from 'lucide-react';
+import { Trophy, Play, RotateCcw, Zap, Rocket, ListOrdered, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -18,8 +18,10 @@ import Link from 'next/link';
 import { useUser, useFirestore, setDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import Leaderboard from './Leaderboard';
+import { useLanguage } from '@/components/LanguageContext';
 
 export default function StackUpFrenzy() {
+  const { t, language, setLanguage } = useLanguage();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [highScore, setHighScore] = useState(0);
   const [perfectDrops, setPerfectDrops] = useState(0);
@@ -89,7 +91,7 @@ export default function StackUpFrenzy() {
         username: user.displayName || `Player ${user.uid.slice(0, 4)}`,
         highScore: score,
         lastPlayedAt: new Date().toISOString(),
-        totalGamesPlayed: 1, // This is a simple update, ideally we'd increment this
+        totalGamesPlayed: 1,
       }, { merge: true });
     }
   }, [user, db]);
@@ -118,7 +120,6 @@ export default function StackUpFrenzy() {
       return;
     }
 
-    // Logic for dropping block
     const top = gameState.blocks[gameState.blocks.length - 1];
     const current = gameState.currentBlock;
 
@@ -204,7 +205,6 @@ export default function StackUpFrenzy() {
 
     setGameState(updatedState);
 
-    // Trigger AI Difficulty Adjuster every 5 blocks
     if (newScore > 0 && newScore % 5 === 0) {
       triggerAIUpdate(updatedState);
     }
@@ -253,7 +253,6 @@ export default function StackUpFrenzy() {
     return () => cancelAnimationFrame(requestRef.current);
   }, [update]);
 
-  // Drawing Logic
   useEffect(() => {
     if (!canvasRef.current || !gameState) return;
     const canvas = canvasRef.current;
@@ -307,7 +306,7 @@ export default function StackUpFrenzy() {
           ctx.fill();
         };
 
-        drawFace([0, 1, 5, 4], color); // Use color variations for better depth
+        drawFace([0, 1, 5, 4], color);
         drawFace([1, 2, 6, 5], color); 
         drawFace([4, 5, 6, 7], color); 
       };
@@ -357,12 +356,22 @@ export default function StackUpFrenzy() {
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <Link href="/promo">
-              <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4 w-full">
-                <Rocket className="w-4 h-4 mr-2 text-primary" />
-                Promo Studio
+            <div className="flex gap-2">
+               <Button 
+                variant="outline" 
+                size="icon" 
+                className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 w-10 shrink-0"
+                onClick={(e) => { e.stopPropagation(); setLanguage(language === 'en' ? 'ru' : 'en'); }}
+              >
+                <Languages className="w-4 h-4 text-primary" />
               </Button>
-            </Link>
+              <Link href="/promo">
+                <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4 w-full">
+                  <Rocket className="w-4 h-4 mr-2 text-primary" />
+                  {t('promoStudio')}
+                </Button>
+              </Link>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 
@@ -370,7 +379,7 @@ export default function StackUpFrenzy() {
               onClick={(e) => { e.stopPropagation(); setShowLeaderboard(true); }}
             >
               <ListOrdered className="w-4 h-4 mr-2 text-primary" />
-              Leaderboard
+              {t('leaderboard')}
             </Button>
           </div>
         </div>
@@ -378,11 +387,11 @@ export default function StackUpFrenzy() {
 
       {/* AI Reasoning Toast */}
       {aiReasoning && (
-        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 w-[90%] max-sm z-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <Card className="p-4 bg-primary/10 border-primary/20 backdrop-blur-md shadow-xl flex items-start gap-3">
             <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <p className="text-xs font-medium text-primary/80 leading-relaxed italic">
-              AI DESIGNER: "{aiReasoning}"
+              {t('aiDesigner')}: "{aiReasoning}"
             </p>
           </Card>
         </div>
@@ -397,14 +406,14 @@ export default function StackUpFrenzy() {
               <h2 className="text-5xl font-extrabold text-secondary tracking-tight">FRENZY</h2>
             </div>
             <p className="text-muted-foreground font-medium max-w-[200px] mx-auto">
-              Tap to drop blocks and build the ultimate tower!
+              {t('instructions')}
             </p>
             <Button 
               size="lg" 
               className="rounded-full px-12 py-8 text-xl font-bold shadow-2xl hover:scale-105 transition-transform bg-primary"
             >
               <Play className="w-6 h-6 mr-2 fill-current" />
-              START GAME
+              {t('startButton')}
             </Button>
           </div>
         </div>
@@ -415,14 +424,14 @@ export default function StackUpFrenzy() {
         <div className="absolute inset-0 z-30 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in zoom-in duration-300">
           <Card className="w-full max-w-sm p-8 text-center space-y-8 shadow-2xl border-none">
             <div className="space-y-2">
-              <h3 className="text-muted-foreground font-bold tracking-widest uppercase text-sm">GAME OVER</h3>
+              <h3 className="text-muted-foreground font-bold tracking-widest uppercase text-sm">{t('gameOver')}</h3>
               <p className="text-6xl font-black text-primary">{gameState.score}</p>
             </div>
 
             <div className="bg-muted p-4 rounded-2xl flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-primary" />
-                <span className="font-bold text-muted-foreground">BEST</span>
+                <span className="font-bold text-muted-foreground">{t('best')}</span>
               </div>
               <span className="text-2xl font-black">{gameState.highScore}</span>
             </div>
@@ -432,7 +441,7 @@ export default function StackUpFrenzy() {
               className="w-full rounded-full py-8 text-xl font-bold shadow-xl bg-secondary hover:bg-secondary/90"
             >
               <RotateCcw className="w-6 h-6 mr-2" />
-              RETRY
+              {t('retry')}
             </Button>
             
             <Button 
@@ -440,13 +449,12 @@ export default function StackUpFrenzy() {
               onClick={(e) => { e.stopPropagation(); setShowLeaderboard(true); }}
               className="w-full text-muted-foreground font-bold h-12 hover:bg-muted/50"
             >
-              VIEW LEADERBOARD
+              {t('viewLeaderboard')}
             </Button>
           </Card>
         </div>
       )}
 
-      {/* Leaderboard Modal */}
       {showLeaderboard && (
         <Leaderboard 
           onClose={() => setShowLeaderboard(false)} 
@@ -454,10 +462,9 @@ export default function StackUpFrenzy() {
         />
       )}
 
-      {/* Touch Instructions */}
       {gameState.isStarted && !gameState.isGameOver && gameState.score < 2 && (
         <div className="absolute bottom-24 left-0 w-full text-center animate-pulse pointer-events-none">
-          <p className="text-muted-foreground font-semibold text-lg uppercase tracking-widest">Tap to drop</p>
+          <p className="text-muted-foreground font-semibold text-lg uppercase tracking-widest">{t('tapToDrop')}</p>
         </div>
       )}
     </div>

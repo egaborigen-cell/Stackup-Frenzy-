@@ -2,12 +2,13 @@
 
 import React from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import { Trophy, X, Medal, User } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/components/LanguageContext';
 
 interface LeaderboardProps {
   onClose: () => void;
@@ -15,6 +16,7 @@ interface LeaderboardProps {
 }
 
 export default function Leaderboard({ onClose, currentUserId }: LeaderboardProps) {
+  const { t } = useLanguage();
   const db = useFirestore();
   
   const leaderboardQuery = useMemoFirebase(() => 
@@ -33,7 +35,7 @@ export default function Leaderboard({ onClose, currentUserId }: LeaderboardProps
         <CardHeader className="bg-primary text-primary-foreground flex flex-row items-center justify-between py-4">
           <div className="flex items-center gap-2">
             <Trophy className="w-6 h-6 fill-current" />
-            <CardTitle className="text-xl font-bold tracking-tight">GLOBAL HALL OF FAME</CardTitle>
+            <CardTitle className="text-xl font-bold tracking-tight uppercase">{t('globalHallOfFame')}</CardTitle>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-white/20 text-white rounded-full">
             <X className="w-5 h-5" />
@@ -78,17 +80,17 @@ export default function Leaderboard({ onClose, currentUserId }: LeaderboardProps
                         <div>
                           <p className={`font-bold ${isMe ? 'text-primary' : ''}`}>
                             {player.username || `Player ${player.id.slice(0, 4)}`}
-                            {isMe && <span className="ml-2 text-[10px] bg-primary/20 text-primary px-1.5 rounded uppercase font-black">YOU</span>}
+                            {isMe && <span className="ml-2 text-[10px] bg-primary/20 text-primary px-1.5 rounded uppercase font-black">{t('you')}</span>}
                           </p>
                           <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
-                            Rank {index + 1}
+                            {t('rank')} {index + 1}
                           </p>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-black text-foreground">{player.highScore}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Points</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold">{t('points')}</p>
                     </div>
                   </div>
                 );
@@ -96,7 +98,7 @@ export default function Leaderboard({ onClose, currentUserId }: LeaderboardProps
             </div>
           ) : (
             <div className="p-12 text-center text-muted-foreground">
-              <p className="font-medium italic">No scores yet. Be the first!</p>
+              <p className="font-medium italic">{t('noScores')}</p>
             </div>
           )}
         </CardContent>
