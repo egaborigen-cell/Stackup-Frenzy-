@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -91,7 +90,7 @@ export default function PromoStudio() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="image">Marketing Banner (Imagen 4)</SelectItem>
+                    <SelectItem value="image">Marketing Banner (Puppeteer)</SelectItem>
                     <SelectItem value="video">Cinematic Trailer (Veo 3.0)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -124,7 +123,7 @@ export default function PromoStudio() {
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    {config.materialType === 'video' ? 'Generating Video (60s)...' : 'Creating Art...'}
+                    {config.materialType === 'video' ? 'Generating Video (60s)...' : 'Capturing Viewport...'}
                   </>
                 ) : (
                   <>
@@ -200,18 +199,18 @@ export default function PromoStudio() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
             <h4 className="font-bold text-primary mb-2 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" /> Image Tips
+              <ImageIcon className="w-4 h-4" /> Screenshot Rendering
             </h4>
             <p className="text-xs text-muted-foreground">
-              Use **Minimalist** for clean app store screenshots. **Cinematic** works best for the main Yandex Games cover art.
+              Using Puppeteer ensures pixel-perfect marketing banners at 1200x630 resolution.
             </p>
           </div>
           <div className="p-4 bg-secondary/5 rounded-xl border border-secondary/10">
             <h4 className="font-bold text-secondary mb-2 flex items-center gap-2">
-              <Video className="w-4 h-4" /> Video Tips
+              <Video className="w-4 h-4" /> Cinematic Veo
             </h4>
             <p className="text-xs text-muted-foreground">
-              Veo 3.0 generates sound! Use **Neon** for high-energy trailers that grab attention on the Poki discovery feed.
+              Veo 3.0 generates realistic gameplay trailers with synchronized audio design.
             </p>
           </div>
         </div>

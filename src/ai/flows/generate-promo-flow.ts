@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI agent that generates promotional materials for the game.
@@ -20,10 +19,16 @@ const PromoInputSchema = z.object({
 
 export type PromoInput = z.infer<typeof PromoInputSchema>;
 
+/**
+ * Main wrapper function to call the promo generation flow.
+ */
 export async function generatePromo(input: PromoInput) {
   return generatePromoFlow(input);
 }
 
+/**
+ * Prompt to generate the HTML layout for the marketing banner.
+ */
 const bannerHtmlPrompt = ai.definePrompt({
   name: 'bannerHtmlPrompt',
   input: { schema: PromoInputSchema },
@@ -46,6 +51,9 @@ const bannerHtmlPrompt = ai.definePrompt({
   8. Return only the full HTML code.`,
 });
 
+/**
+ * The core Genkit flow for generating promotional materials.
+ */
 const generatePromoFlow = ai.defineFlow(
   {
     name: 'generatePromoFlow',
@@ -82,7 +90,7 @@ const generatePromoFlow = ai.defineFlow(
           await browser.close();
         }
       } else {
-        // Video generation with Veo 3.0 (remains unchanged as it's the specific tool for video)
+        // Video generation with Veo 3.0
         const safetySettings: any = [
           { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
           { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
@@ -99,7 +107,7 @@ const generatePromoFlow = ai.defineFlow(
         if (!operation) throw new Error('Expected the model to return an operation');
 
         let attempts = 0;
-        const maxAttempts = 24; 
+        const maxAttempts = 24; // 2 minutes max
         while (!operation.done && attempts < maxAttempts) {
           operation = await ai.checkOperation(operation);
           if (!operation.done) {
