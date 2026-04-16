@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Trophy, Play, RotateCcw, Zap, Rocket } from 'lucide-react';
+import { Trophy, Play, RotateCcw, Zap, Rocket, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -16,6 +15,9 @@ import {
 } from '@/app/lib/game-engine';
 import { dynamicDifficultyAdjustment } from '@/ai/flows/dynamic-difficulty-adjustment';
 import Link from 'next/link';
+import { useUser, useFirestore, setDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import Leaderboard from './Leaderboard';
 
 export default function StackUpFrenzy() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -23,6 +25,7 @@ export default function StackUpFrenzy() {
   const [perfectDrops, setPerfectDrops] = useState(0);
   const [missedDrops, setMissedDrops] = useState(0);
   const [startTime, setStartTime] = useState(0);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [difficulty, setDifficulty] = useState({
     spinSpeedMultiplier: 1.0,
     blockDropIntervalMultiplier: 1.0,
@@ -33,8 +36,16 @@ export default function StackUpFrenzy() {
   const requestRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
 
-  // Load high score
+  const { user, isUserLoading } = useUser();
+  const db = useFirestore();
+  const auth = useAuth();
+
+  // Load high score and sign in
   useEffect(() => {
+    if (!user && !isUserLoading) {
+      initiateAnonymousSignIn(auth);
+    }
+    
     const saved = localStorage.getItem('stackup-frenzy-highscore');
     if (saved) {
       const parsed = parseInt(saved, 10);
@@ -43,7 +54,7 @@ export default function StackUpFrenzy() {
     } else {
       setGameState(createInitialState(0));
     }
-  }, []);
+  }, [user, isUserLoading, auth]);
 
   const triggerAIUpdate = useCallback(async (state: GameState) => {
     const duration = Math.floor((Date.now() - startTime) / 1000);
@@ -69,6 +80,19 @@ export default function StackUpFrenzy() {
       console.error("AI Difficulty Error", e);
     }
   }, [startTime, missedDrops, difficulty]);
+
+  const saveHighScoreToFirestore = useCallback((score: number) => {
+    if (user) {
+      const playerRef = doc(db, 'playerProfiles', user.uid);
+      setDocumentNonBlocking(playerRef, {
+        id: user.uid,
+        username: user.displayName || `Player ${user.uid.slice(0, 4)}`,
+        highScore: score,
+        lastPlayedAt: new Date().toISOString(),
+        totalGamesPlayed: 1, // This is a simple update, ideally we'd increment this
+      }, { merge: true });
+    }
+  }, [user, db]);
 
   const restartGame = useCallback(() => {
     const newState = createInitialState(highScore);
@@ -112,7 +136,12 @@ export default function StackUpFrenzy() {
     if (gameState.direction === 'x') {
       overlapWidth = current.width - diffX;
       if (overlapWidth <= 0) {
-        setGameState(prev => prev ? { ...prev, isGameOver: true } : null);
+        setGameState(prev => {
+          if (!prev) return null;
+          const endState = { ...prev, isGameOver: true };
+          saveHighScoreToFirestore(prev.score);
+          return endState;
+        });
         return;
       }
       newX = (current.x + top.x) / 2;
@@ -124,7 +153,12 @@ export default function StackUpFrenzy() {
     } else {
       overlapDepth = current.depth - diffZ;
       if (overlapDepth <= 0) {
-        setGameState(prev => prev ? { ...prev, isGameOver: true } : null);
+        setGameState(prev => {
+          if (!prev) return null;
+          const endState = { ...prev, isGameOver: true };
+          saveHighScoreToFirestore(prev.score);
+          return endState;
+        });
         return;
       }
       newZ = (current.z + top.z) / 2;
@@ -174,7 +208,7 @@ export default function StackUpFrenzy() {
     if (newScore > 0 && newScore % 5 === 0) {
       triggerAIUpdate(updatedState);
     }
-  }, [gameState, highScore, restartGame, triggerAIUpdate]);
+  }, [gameState, highScore, restartGame, triggerAIUpdate, saveHighScoreToFirestore]);
 
   const update = useCallback((time: number) => {
     if (!lastTimeRef.current) lastTimeRef.current = time;
@@ -226,7 +260,6 @@ export default function StackUpFrenzy() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Responsive Canvas
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -236,28 +269,22 @@ export default function StackUpFrenzy() {
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
       const centerX = canvas.width / 2;
       const centerY = canvas.height * 0.7;
-      
-      // Camera Smoothing: shift view as tower grows
       const cameraY = Math.max(0, (gameState.blocks.length - 5) * BLOCK_HEIGHT);
       
-      // Iso Projection Function
       const project = (x: number, y: number, z: number) => {
         const angle = gameState.spinAngle;
         const rx = x * Math.cos(angle) - z * Math.sin(angle);
         const rz = x * Math.sin(angle) + z * Math.cos(angle);
-        
         return {
           px: centerX + rx - rz,
           py: centerY - (y - cameraY) - (rx + rz) * 0.5
         };
       };
 
-      const drawBlock = (block: Block, isCurrent = false) => {
+      const drawBlock = (block: Block) => {
         const { x, z, width, depth, y, color } = block;
-        
         const points = [
           project(x - width/2, y, z - depth/2),
           project(x + width/2, y, z - depth/2),
@@ -269,7 +296,6 @@ export default function StackUpFrenzy() {
           project(x - width/2, y + BLOCK_HEIGHT, z + depth/2),
         ];
 
-        // Sides
         const drawFace = (indices: number[], faceColor: string) => {
           ctx.beginPath();
           ctx.moveTo(points[indices[0]].px, points[indices[0]].py);
@@ -281,14 +307,9 @@ export default function StackUpFrenzy() {
           ctx.fill();
         };
 
-        // Simple Shading
-        const shade = (c: string, amount: number) => {
-          return c; 
-        };
-
-        drawFace([0, 1, 5, 4], shade(color, -20)); // Front
-        drawFace([1, 2, 6, 5], shade(color, -40)); // Right
-        drawFace([4, 5, 6, 7], color); // Top
+        drawFace([0, 1, 5, 4], color); // Use color variations for better depth
+        drawFace([1, 2, 6, 5], color); 
+        drawFace([4, 5, 6, 7], color); 
       };
 
       gameState.blocks.forEach((b, i) => {
@@ -298,7 +319,7 @@ export default function StackUpFrenzy() {
       });
 
       if (gameState.isStarted && !gameState.isGameOver) {
-        drawBlock(gameState.currentBlock, true);
+        drawBlock(gameState.currentBlock);
       }
     };
 
@@ -335,12 +356,23 @@ export default function StackUpFrenzy() {
               COMBO X{gameState.combo}
             </div>
           )}
-          <Link href="/promo">
-            <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4">
-              <Rocket className="w-4 h-4 mr-2 text-primary" />
-              Promo Studio
+          <div className="flex flex-col gap-2">
+            <Link href="/promo">
+              <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4 w-full">
+                <Rocket className="w-4 h-4 mr-2 text-primary" />
+                Promo Studio
+              </Button>
+            </Link>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4"
+              onClick={(e) => { e.stopPropagation(); setShowLeaderboard(true); }}
+            >
+              <ListOrdered className="w-4 h-4 mr-2 text-primary" />
+              Leaderboard
             </Button>
-          </Link>
+          </div>
         </div>
       </div>
 
@@ -402,8 +434,24 @@ export default function StackUpFrenzy() {
               <RotateCcw className="w-6 h-6 mr-2" />
               RETRY
             </Button>
+            
+            <Button 
+              variant="ghost"
+              onClick={(e) => { e.stopPropagation(); setShowLeaderboard(true); }}
+              className="w-full text-muted-foreground font-bold h-12 hover:bg-muted/50"
+            >
+              VIEW LEADERBOARD
+            </Button>
           </Card>
         </div>
+      )}
+
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <Leaderboard 
+          onClose={() => setShowLeaderboard(false)} 
+          currentUserId={user?.uid}
+        />
       )}
 
       {/* Touch Instructions */}
