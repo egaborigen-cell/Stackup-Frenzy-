@@ -19,9 +19,11 @@ import { useUser, useFirestore, setDocumentNonBlocking, initiateAnonymousSignIn,
 import { doc } from 'firebase/firestore';
 import Leaderboard from './Leaderboard';
 import { useLanguage } from '@/components/LanguageContext';
+import { useYandexGames } from '@/components/YandexGamesContext';
 
 export default function StackUpFrenzy() {
   const { t, language, setLanguage } = useLanguage();
+  const { ysdk, isInitialized } = useYandexGames();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [highScore, setHighScore] = useState(0);
   const [perfectDrops, setPerfectDrops] = useState(0);
@@ -57,6 +59,13 @@ export default function StackUpFrenzy() {
       setGameState(createInitialState(0));
     }
   }, [user, isUserLoading, auth]);
+
+  // Yandex Game Ready Signal
+  useEffect(() => {
+    if (isInitialized && ysdk && gameState) {
+      ysdk.features.LoadingAPI?.ready();
+    }
+  }, [isInitialized, ysdk, !!gameState]);
 
   const triggerAIUpdate = useCallback(async (state: GameState) => {
     const duration = Math.floor((Date.now() - startTime) / 1000);
