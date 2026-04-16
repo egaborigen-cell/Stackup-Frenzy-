@@ -1,7 +1,8 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Trophy, Play, RotateCcw, Zap, Rocket, ListOrdered, Languages } from 'lucide-react';
+import { Trophy, Play, RotateCcw, Zap, ListOrdered, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -14,7 +15,6 @@ import {
   getBlockColor 
 } from '@/app/lib/game-engine';
 import { dynamicDifficultyAdjustment } from '@/ai/flows/dynamic-difficulty-adjustment';
-import Link from 'next/link';
 import { useUser, useFirestore, setDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
 import { doc, increment } from 'firebase/firestore';
 import Leaderboard from './Leaderboard';
@@ -44,7 +44,6 @@ export default function StackUpFrenzy() {
   const db = useFirestore();
   const auth = useAuth();
 
-  // Load high score and sign in
   useEffect(() => {
     if (!user && !isUserLoading) {
       initiateAnonymousSignIn(auth);
@@ -60,7 +59,6 @@ export default function StackUpFrenzy() {
     }
   }, [user, isUserLoading, auth]);
 
-  // Yandex Game Ready Signal
   useEffect(() => {
     if (isInitialized && ysdk && gameState) {
       ysdk.features.LoadingAPI?.ready();
@@ -85,7 +83,6 @@ export default function StackUpFrenzy() {
       });
       setAiReasoning(result.reasoning);
       
-      // Clear reasoning after 4 seconds
       setTimeout(() => setAiReasoning(null), 4000);
     } catch (e) {
       console.error("AI Difficulty Error", e);
@@ -93,7 +90,6 @@ export default function StackUpFrenzy() {
   }, [startTime, missedDrops, difficulty]);
 
   const saveHighScoreToFirestore = useCallback((score: number) => {
-    // 1. Update Firebase Firestore
     if (user) {
       const playerRef = doc(db, 'playerProfiles', user.uid);
       setDocumentNonBlocking(playerRef, {
@@ -105,12 +101,10 @@ export default function StackUpFrenzy() {
       }, { merge: true });
     }
 
-    // 2. Update Yandex Games Leaderboard
     if (ysdk) {
       ysdk.getLeaderboards()
         .then((lb: any) => {
           lb.setLeaderboardScore('leaderboard', score);
-          console.log('Yandex Leaderboard score set:', score);
         })
         .catch((err: any) => {
           console.error('Yandex Leaderboard Error:', err);
@@ -355,12 +349,8 @@ export default function StackUpFrenzy() {
       className="relative w-full h-screen overflow-hidden bg-background flex flex-col items-center justify-center game-canvas-container"
       onClick={handleAction}
     >
-      <canvas 
-        ref={canvasRef} 
-        className="absolute inset-0 z-0"
-      />
+      <canvas ref={canvasRef} className="absolute inset-0 z-0" />
 
-      {/* HUD */}
       <div className="absolute top-12 left-0 w-full px-8 flex justify-between items-start z-10 pointer-events-none">
         <div className="flex flex-col">
           <span className="text-primary font-bold text-5xl drop-shadow-sm">{gameState.score}</span>
@@ -378,22 +368,14 @@ export default function StackUpFrenzy() {
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-               <Button 
-                variant="outline" 
-                size="icon" 
-                className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 w-10 shrink-0"
-                onClick={(e) => { e.stopPropagation(); setLanguage(language === 'en' ? 'ru' : 'en'); }}
-              >
-                <Languages className="w-4 h-4 text-primary" />
-              </Button>
-              <Link href="/promo">
-                <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4 w-full">
-                  <Rocket className="w-4 h-4 mr-2 text-primary" />
-                  {t('promoStudio')}
-                </Button>
-              </Link>
-            </div>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 w-10 shrink-0"
+              onClick={(e) => { e.stopPropagation(); setLanguage(language === 'en' ? 'ru' : 'en'); }}
+            >
+              <Languages className="w-4 h-4 text-primary" />
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
@@ -407,7 +389,6 @@ export default function StackUpFrenzy() {
         </div>
       </div>
 
-      {/* AI Reasoning Toast */}
       {aiReasoning && (
         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 w-[90%] max-sm z-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <Card className="p-4 bg-primary/10 border-primary/20 backdrop-blur-md shadow-xl flex items-start gap-3">
@@ -419,7 +400,6 @@ export default function StackUpFrenzy() {
         </div>
       )}
 
-      {/* Start Overlay */}
       {!gameState.isStarted && !gameState.isGameOver && (
         <div className="absolute inset-0 z-30 bg-background/40 backdrop-blur-sm flex flex-col items-center justify-center p-8 animate-in fade-in duration-500">
           <div className="text-center space-y-6">
@@ -427,9 +407,7 @@ export default function StackUpFrenzy() {
               <h1 className="text-5xl font-extrabold text-primary tracking-tight">STACKUP</h1>
               <h2 className="text-5xl font-extrabold text-secondary tracking-tight">FRENZY</h2>
             </div>
-            <p className="text-muted-foreground font-medium max-w-[200px] mx-auto">
-              {t('instructions')}
-            </p>
+            <p className="text-muted-foreground font-medium max-w-[200px] mx-auto">{t('instructions')}</p>
             <Button 
               size="lg" 
               className="rounded-full px-12 py-8 text-xl font-bold shadow-2xl hover:scale-105 transition-transform bg-primary"
@@ -441,7 +419,6 @@ export default function StackUpFrenzy() {
         </div>
       )}
 
-      {/* Game Over Overlay */}
       {gameState.isGameOver && (
         <div className="absolute inset-0 z-30 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in zoom-in duration-300">
           <Card className="w-full max-w-sm p-8 text-center space-y-8 shadow-2xl border-none">
@@ -478,10 +455,7 @@ export default function StackUpFrenzy() {
       )}
 
       {showLeaderboard && (
-        <Leaderboard 
-          onClose={() => setShowLeaderboard(false)} 
-          currentUserId={user?.uid}
-        />
+        <Leaderboard onClose={() => setShowLeaderboard(false)} currentUserId={user?.uid} />
       )}
 
       {gameState.isStarted && !gameState.isGameOver && gameState.score < 2 && (
