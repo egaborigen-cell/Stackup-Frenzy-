@@ -1,7 +1,8 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Trophy, Play, RotateCcw, Zap } from 'lucide-react';
+import { Trophy, Play, RotateCcw, Zap, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ import {
   getBlockColor 
 } from '@/app/lib/game-engine';
 import { dynamicDifficultyAdjustment } from '@/ai/flows/dynamic-difficulty-adjustment';
+import Link from 'next/link';
 
 export default function StackUpFrenzy() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -281,25 +283,20 @@ export default function StackUpFrenzy() {
 
         // Simple Shading
         const shade = (c: string, amount: number) => {
-          // Very basic color darkening for 2D shading
           return c; 
         };
 
-        // Draw faces back to front roughly
         drawFace([0, 1, 5, 4], shade(color, -20)); // Front
         drawFace([1, 2, 6, 5], shade(color, -40)); // Right
         drawFace([4, 5, 6, 7], color); // Top
       };
 
-      // Draw all blocks in the stack
       gameState.blocks.forEach((b, i) => {
-        // Only draw visible blocks to save perf
         if (i > gameState.blocks.length - 20) {
           drawBlock(b);
         }
       });
 
-      // Draw falling block
       if (gameState.isStarted && !gameState.isGameOver) {
         drawBlock(gameState.currentBlock, true);
       }
@@ -331,12 +328,20 @@ export default function StackUpFrenzy() {
           </div>
         </div>
 
-        {gameState.combo > 1 && (
-          <div className="bg-secondary text-white px-4 py-2 rounded-full font-bold animate-bounce shadow-lg flex items-center gap-2">
-            <Zap className="w-4 h-4 fill-current" />
-            COMBO X{gameState.combo}
-          </div>
-        )}
+        <div className="flex flex-col items-end gap-2 pointer-events-auto">
+          {gameState.combo > 1 && (
+            <div className="bg-secondary text-white px-4 py-2 rounded-full font-bold animate-bounce shadow-lg flex items-center gap-2 mb-2">
+              <Zap className="w-4 h-4 fill-current" />
+              COMBO X{gameState.combo}
+            </div>
+          )}
+          <Link href="/promo">
+            <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4">
+              <Rocket className="w-4 h-4 mr-2 text-primary" />
+              Promo Studio
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* AI Reasoning Toast */}
