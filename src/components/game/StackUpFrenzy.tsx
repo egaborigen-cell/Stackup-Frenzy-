@@ -16,7 +16,7 @@ import {
 import { dynamicDifficultyAdjustment } from '@/ai/flows/dynamic-difficulty-adjustment';
 import Link from 'next/link';
 import { useUser, useFirestore, setDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, increment } from 'firebase/firestore';
 import Leaderboard from './Leaderboard';
 import { useLanguage } from '@/components/LanguageContext';
 import { useYandexGames } from '@/components/YandexGamesContext';
@@ -93,6 +93,7 @@ export default function StackUpFrenzy() {
   }, [startTime, missedDrops, difficulty]);
 
   const saveHighScoreToFirestore = useCallback((score: number) => {
+    // 1. Update Firebase Firestore
     if (user) {
       const playerRef = doc(db, 'playerProfiles', user.uid);
       setDocumentNonBlocking(playerRef, {
@@ -100,10 +101,22 @@ export default function StackUpFrenzy() {
         username: user.displayName || `Player ${user.uid.slice(0, 4)}`,
         highScore: score,
         lastPlayedAt: new Date().toISOString(),
-        totalGamesPlayed: 1,
+        totalGamesPlayed: increment(1),
       }, { merge: true });
     }
-  }, [user, db]);
+
+    // 2. Update Yandex Games Leaderboard
+    if (ysdk) {
+      ysdk.getLeaderboards()
+        .then((lb: any) => {
+          lb.setLeaderboardScore('leaderboard', score);
+          console.log('Yandex Leaderboard score set:', score);
+        })
+        .catch((err: any) => {
+          console.error('Yandex Leaderboard Error:', err);
+        });
+    }
+  }, [user, db, ysdk]);
 
   const restartGame = useCallback(() => {
     const newState = createInitialState(highScore);
