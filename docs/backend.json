@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "PlayerProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PlayerProfile",
+      "type": "object",
+      "description": "Stores individual player's game progress and statistics for StackUp Frenzy, including their highest score and overall engagement.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PlayerProfile entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The display name chosen by the player, used for leaderboards and personalization within the game."
+        },
+        "highScore": {
+          "type": "number",
+          "description": "The highest score ever achieved by this player across all game sessions."
+        },
+        "lastPlayedAt": {
+          "type": "string",
+          "description": "Timestamp indicating the exact moment the player last completed a game session.",
+          "format": "date-time"
+        },
+        "totalGamesPlayed": {
+          "type": "number",
+          "description": "The cumulative count of all game sessions completed by the player."
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "highScore",
+        "lastPlayedAt",
+        "totalGamesPlayed"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/playerProfiles/{userId}",
+        "definition": {
+          "entityName": "PlayerProfile",
+          "schema": {
+            "$ref": "#/backend/entities/PlayerProfile"
+          },
+          "description": "Stores individual player's game progress and statistics for StackUp Frenzy. The document ID (`{userId}`) is the player's Firebase Authentication UID. This directly ties ownership to the document path, ensuring authorization independence for reads and writes. Documents in this collection are publicly readable for leaderboard functionality but only writable by the authenticated user matching the document's `userId`.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user (Firebase Authentication UID) who owns this player profile. This also serves as the document ID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure for 'StackUp Frenzy' prioritizes security, scalability, and debuggability, specifically focusing on the `PlayerProfile` entity. A single top-level collection, `/playerProfiles/{userId}`, will be used.\n\n**Authorization Independence:** This structure achieves authorization independence by leveraging the document ID as the primary authorization context. Each `PlayerProfile` document's ID (`{userId}`) will directly correspond to the Firebase Authentication UID of the player who owns it. This eliminates the need for any `get()` calls in security rules, as ownership can be verified atomically by comparing `request.auth.uid` with the `userId` wildcard (e.g., `request.auth.uid == userId`). This design supports atomic operations like profile creation and updates without complex dependencies.\n\n**QAPs (Query as Authorization Patterns):** The `/playerProfiles` collection is designed with a homogeneous security posture, meaning all documents within it share similar access requirements. For a hypercasual game like StackUp Frenzy, a common pattern is to have a public leaderboard while restricting profile modifications to the owner. This structure supports secure `list` operations (QAPs) by allowing all users to read any document in the `/playerProfiles` collection (for leaderboard display) while strictly enforcing write access only to the authenticated user whose `uid` matches the `userId` document ID. This means client-side queries can fetch all profiles for a leaderboard display without needing to filter on the client, as the security rules ensure only appropriate data is accessed and modified. This eliminates 'rules as filters' issues and makes rules simpler and more robust."
+  }
+}

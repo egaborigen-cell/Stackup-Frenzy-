@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * STACKUP FRENZY SECURITY RULES
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset implements a "Public Read, Owner-Only Write" model. It is designed for 
+     * a competitive hypercasual game environment where player statistics must be 
+     * transparent for leaderboards while ensuring only the authenticated account 
+     * holder can modify their own progress.
+     *
+     * DATA STRUCTURE:
+     * Data is organized into a flat, top-level collection:
+     * - `/playerProfiles/{userId}`: Stores progress, high scores, and stats.
+     *
+     * KEY SECURITY DECISIONS:
+     * 1. Authorization Independence: The document ID `{userId}` is strictly mapped to the 
+     *    Firebase Authentication UID. This allows for O(1) authorization checks without 
+     *    requiring cross-document lookups (get() calls).
+     * 2. Public Readability: All player profiles are listable and readable to facilitate 
+     *    global leaderboards and player discovery.
+     * 3. Ownership-Based Writes: Any operation that modifies data (create, update, delete) 
+     *    is strictly limited to the user whose UID matches the document ID.
+     * 4. Relational Integrity: On creation, the rules enforce that the internal 'id' 
+     *    field matches the document path ID. On update, this field is immutable.
+     *
+     * PROTOTYPING MODE:
+     * These rules enforce strict authorization and relational consistency but allow 
+     * flexible data shapes for individual fields (highScore, lastPlayedAt, etc.) to 
+     * permit rapid feature iteration.
+     */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Ensures the user is the owner and that the document being accessed exists. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for managing individual player profiles and statistics.
+     * @path /playerProfiles/{userId}
+     * @allow (get, list) If anyone (authenticated or guest) wants to view profiles or the leaderboard.
+     * @allow (create) If an authenticated user is creating a profile where the UID matches the document path and the internal 'id' field.
+     * @deny (write) If a user attempts to create or modify a profile belonging to a different UID.
+     * @principle Enforces path-based ownership and ensures relational integrity between auth and data.
+     */
+    match /playerProfiles/{userId} {
+      allow get, list: if true;
+
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+
+      allow delete: if isExistingOwner(userId);
+    }
+
+  }
+}
