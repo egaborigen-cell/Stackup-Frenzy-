@@ -1,1 +1,3 @@
-# Removed
+
+google-generativeai
+Pillow
