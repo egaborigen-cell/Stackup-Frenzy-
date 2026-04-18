@@ -24,12 +24,24 @@ cd Stackup-Frenzy-
 
 ### 2. Configuration (Required)
 The game uses Google Gemini for dynamic difficulty. You **must** provide an API key.
-1. Create a `.env` file in the root directory (if it doesn't exist).
+
+#### Method A: Using a .env file (Recommended for Local Dev)
+1. Create a `.env` file in the root directory.
 2. Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 3. Add it to your `.env`:
    ```env
    GOOGLE_GENAI_API_KEY=your_actual_key_here
    ```
+
+#### Method B: System Environment Variables
+Useful for temporary sessions:
+```bash
+export GOOGLE_GENAI_API_KEY=your_actual_key_here
+npm run dev
+```
+
+#### Method C: Production (Vercel/Netlify)
+Add `GOOGLE_GENAI_API_KEY` to your project's environment variables in the hosting provider's dashboard.
 
 ### 3. Install Dependencies
 ```bash
@@ -44,34 +56,14 @@ npm run dev
 ## Troubleshooting
 
 ### `FAILED_PRECONDITION: Please pass in the API key`
-This means the `GOOGLE_GENAI_API_KEY` is missing from your `.env` file or environment. Ensure the key is correctly set and that you have restarted the dev server after adding it.
+This means the `GOOGLE_GENAI_API_KEY` is missing. Ensure the key is correctly set in your `.env` or system environment and restart the dev server.
 
-### `npm error code 1` / `esbuild` error
-If you encounter an error related to `esbuild` (e.g., `dyld: Symbol not found: _SecTrustCopyCertificateChain`):
-- This often happens on older macOS versions (10.14 and below).
-- **Fix**: Run this command to force a fresh, architecture-specific build:
+### `npm error code 1` / `esbuild` / `dyld` symbols
+If you see `_SecTrustCopyCertificateChain` or `esbuild` errors on older macOS (10.14 or below):
+- **Fix**: Run this command to force a fresh build:
   ```bash
   rm -rf node_modules package-lock.json && npm install
   ```
-
-## Promo Generation (Python Utility)
-
-We provide a Python utility to help you create store assets for Poki and Yandex Games.
-
-### Usage
-1. Ensure you have Python installed.
-2. Install dependencies:
-   ```bash
-   pip install -r scripts/requirements.txt
-   ```
-3. Set your API Key:
-   ```bash
-   export GOOGLE_GENAI_API_KEY=your_key_here
-   ```
-4. Run the script:
-   ```bash
-   python scripts/generate_promo.py
-   ```
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router)
