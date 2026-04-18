@@ -15,38 +15,44 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 ## Getting Started
 
 ### 1. Cloning the Repository
-If you encounter the error `fatal: could not create work tree dir...`, it usually means you are trying to clone into a directory that doesn't exist or where you lack write permissions. Try cloning directly into your current folder:
+If you encounter the error `fatal: could not create work tree dir...`, ensure you are in a writable directory:
 
 ```bash
 git clone <repository-url>
 cd Stackup-Frenzy-
 ```
 
-### 2. Install Dependencies
+### 2. Configuration (Required)
+The game uses Google Gemini for dynamic difficulty. You **must** provide an API key.
+1. Create a `.env` file in the root directory (if it doesn't exist).
+2. Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+3. Add it to your `.env`:
+   ```env
+   GOOGLE_GENAI_API_KEY=your_actual_key_here
+   ```
+
+### 3. Install Dependencies
 ```bash
 npm install
 ```
 
-### 3. Run Development Server
+### 4. Run Development Server
 ```bash
 npm run dev
 ```
 
 ## Troubleshooting
 
+### `FAILED_PRECONDITION: Please pass in the API key`
+This means the `GOOGLE_GENAI_API_KEY` is missing from your `.env` file or environment. Ensure the key is correctly set and that you have restarted the dev server after adding it.
+
 ### `npm error code 1` / `esbuild` error
 If you encounter an error related to `esbuild` (e.g., `dyld: Symbol not found: _SecTrustCopyCertificateChain`):
 - This often happens on older macOS versions (10.14 and below).
-- **Fix**: We have removed `genkit-cli` from the project dependencies to minimize these binary issues.
-- **Clean Reinstall**: Run this command to force a fresh, architecture-specific build:
+- **Fix**: Run this command to force a fresh, architecture-specific build:
   ```bash
   rm -rf node_modules package-lock.json && npm install
   ```
-
-### Git: `could not create work tree dir`
-- Ensure you are not inside a protected system folder.
-- Check that the destination folder name doesn't contain illegal characters for your OS.
-- Run `pwd` to check your current path and ensure it's a location you can write to (like `/Users/yourname/Projects`).
 
 ## Promo Generation (Python Utility)
 
@@ -60,7 +66,7 @@ We provide a Python utility to help you create store assets for Poki and Yandex 
    ```
 3. Set your API Key:
    ```bash
-   export GEMINI_API_KEY=your_key_here
+   export GOOGLE_GENAI_API_KEY=your_key_here
    ```
 4. Run the script:
    ```bash
