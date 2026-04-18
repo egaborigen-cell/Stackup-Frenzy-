@@ -7,34 +7,34 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 
 ### 🎮 The Game
 - **Isometric Stacking**: Precision-based gameplay where you stack moving blocks to build the tallest tower possible.
-- **Dynamic Difficulty**: An AI Game Designer agent monitors your performance in real-time and subtly adjusts game parameters (spin speed, drop intervals) to keep you in the "flow state".
-- **Combo System**: Land perfect stacks to trigger high-score multipliers and visual effects.
-- **Global Leaderboard**: Compete with players worldwide. Scores are saved automatically to Firebase Firestore.
+- **Dynamic Difficulty**: An AI Game Designer agent monitors your performance in real-time and subtly adjusts game parameters.
+- **Global Leaderboard**: Compete with players worldwide via Firebase Firestore.
 - **Multilingual Support**: Available in English and Russian.
 - **Yandex Games Integration**: Fully optimized for the Yandex Games portal.
+
+## Promo Generation
+
+We provide a Python utility to help you create store assets for Poki and Yandex Games.
+
+### Usage
+1. Ensure you have Python installed.
+2. Install dependencies:
+   ```bash
+   pip install -r scripts/requirements.txt
+   ```
+3. Set your API Key:
+   ```bash
+   export GEMINI_API_KEY=your_key_here
+   ```
+4. Run the script:
+   ```bash
+   python scripts/generate_promo.py
+   ```
+
+This will generate SEO metadata and basic banners in the `promo_assets/` directory.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router)
 - **AI SDK**: [Genkit](https://github.com/firebase/genkit)
-- **AI Models**: Gemini 2.5 Flash
-- **Styling**: Tailwind CSS + ShadCN UI
 - **Database/Auth**: Firebase Firestore & Firebase Auth
-
-## Getting Started
-
-### Development
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start the development server:
-   ```bash
-   npm run dev
-   ```
-3. Open the Genkit UI to inspect AI flows:
-   ```bash
-   npm run genkit:dev
-   ```
-
-### Deployment
-This app can be deployed to any modern hosting provider (Vercel, Netlify, etc.). 
+- **Portals**: Yandex Games SDK
