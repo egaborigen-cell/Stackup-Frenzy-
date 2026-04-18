@@ -14,59 +14,48 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 
 ## Tech Stack Choice: Why Genkit?
 
-This project uses **Genkit** as its primary Generative AI framework. While alternatives like the Vercel AI SDK or LangChain exist, Genkit was chosen for several key reasons:
+This project uses **Genkit** as its primary Generative AI framework. 
 
-1. **Firebase Integration**: Genkit is built by the Firebase team, ensuring smooth integration with our Firestore leaderboards and Authentication.
-2. **Type Safety**: It uses Zod to ensure the AI's "thoughts" (like difficulty adjustments) always follow a strict schema, preventing game-breaking logic.
-3. **Optimized for Gemini**: It provides the most direct and efficient path to using Google's Gemini 2.5 Flash models.
-4. **Lightweight Core**: After refactoring, we use only the library core, avoiding complex system dependencies like `esbuild` that can cause issues on older hardware.
+1. **Server-Side Intelligence**: Genkit runs on the server (Node.js) to securely handle AI prompts and API keys.
+2. **Type Safety**: It uses Zod to ensure the AI's "thoughts" (like difficulty adjustments) always follow a strict schema.
+3. **Firebase Integration**: Built for seamless connection with Firestore for leaderboards.
+
+### Static Export Note ⚠️
+If you use `output: 'export'` for a **Static Web Export** (e.g., for uploading a .zip to Yandex Games):
+- The static files **do not** include Genkit (it is stripped out of the client bundle).
+- **Server Actions will not work.** The AI Game Designer will be disabled unless you host the AI flows as a separate API.
+- For the full experience, host on a platform that supports Next.js Server Actions (Vercel, Firebase App Hosting, etc.).
 
 ## Getting Started
 
 ### 1. Cloning the Repository
-If you encounter the error `fatal: could not create work tree dir...`, ensure you are in a writable directory:
-
+If you encounter permission errors, ensure you are in a writable directory:
 ```bash
 git clone <repository-url>
 cd Stackup-Frenzy-
 ```
 
 ### 2. Configuration (Required)
-The game uses Google Gemini for dynamic difficulty. You **must** provide an API key.
-
-#### Method A: Using a .env file (Recommended for Local Dev)
-1. Create a `.env` file in the root directory.
-2. Get an API key from [Google AI Studio](https://astudio.google.com/app/apikey).
-3. Add it to your `.env`:
-   ```env
-   GOOGLE_GENAI_API_KEY=your_actual_key_here
-   ```
-
-#### Method B: System Environment Variables
-Useful for temporary sessions:
-```bash
-export GOOGLE_GENAI_API_KEY=your_actual_key_here
-npm run dev
+The game uses Google Gemini. You **must** provide an API key in a `.env` file:
+```env
+GOOGLE_GENAI_API_KEY=your_actual_key_here
 ```
+Get a key from [Google AI Studio](https://a Studio.google.com/app/apikey).
 
-### 3. Install Dependencies
+### 3. Install & Run
 ```bash
 npm install
-```
-
-### 4. Run Development Server
-```bash
 npm run dev
 ```
 
 ## Troubleshooting
 
-### `FAILED_PRECONDITION: Please pass in the API key`
-This means the `GOOGLE_GENAI_API_KEY` is missing. Ensure the key is correctly set in your `.env` or system environment and restart the dev server.
-
 ### `dyld: Symbol not found: _SecTrustCopyCertificateChain`
-This usually means you are on an older macOS (10.14 or below). 
-- **Fix**: We have removed the `genkit-cli` dependency to resolve this. Ensure you perform a clean install:
+This means you are on an older macOS (10.14 or below). 
+- **Fix**: We have removed the `genkit-cli` dependency to resolve this. Perform a clean install:
   ```bash
   rm -rf node_modules package-lock.json && npm install
   ```
+
+### `FAILED_PRECONDITION: Please pass in the API key`
+Ensure your `GOOGLE_GENAI_API_KEY` is correctly set in `.env` and restart the server.
