@@ -35,6 +35,15 @@ If you encounter an error related to `node_modules/esbuild` during installation:
 2. Run `npm install` again.
 This forces `esbuild` to download the correct binary for your specific OS architecture (e.g., Apple Silicon vs Intel).
 
+### `dyld: Symbol not found: _SecTrustCopyCertificateChain`
+This error occurs when the `esbuild` binary is incompatible with your version of macOS (usually macOS 10.14 or older).
+- **Fix 1**: Update your macOS to 10.15 (Catalina) or newer.
+- **Fix 2**: If you are on a modern macOS, run:
+  ```bash
+  rm -rf node_modules package-lock.json && npm install
+  ```
+  This clears any incorrect binaries that might have been cached or pulled from a different environment.
+
 ## Promo Generation (Python Utility)
 
 We provide a Python utility to help you create store assets for Poki and Yandex Games.
