@@ -12,10 +12,28 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 - **Multilingual Support**: Available in English and Russian.
 - **Yandex Games Integration**: Fully optimized for the Yandex Games portal with leaderboard support.
 
+## Building and Deployment
+
+### 1. Standard Production Build
+To create a production-ready build that supports the AI Game Designer (Server Actions):
+```bash
+npm run build
+```
+- **Output Location**: `.next`
+- **Hosting**: Requires a Node.js environment (e.g., Vercel, Firebase App Hosting, or a custom VPS).
+
+### 2. Static Web Export (for Portals)
+For platforms like **Yandex Games** or **Poki** that require a static bundle:
+1. Open `next.config.ts`.
+2. Add `output: 'export'` to the config object.
+3. Run `npm run build`.
+- **Output Location**: `out`
+- **Note**: The AI Game Designer will be disabled in static mode unless the Genkit flows are hosted as a separate API.
+
 ## Developer Tools
 
 ### 🚀 Autonomous Promo Generator
-We've included a Python script to help you generate all necessary marketing materials for **Poki** and **Yandex Games**.
+We've included a Python script to help you generate all necessary marketing materials.
 
 **Prerequisites:**
 - Python 3.8+
@@ -41,11 +59,6 @@ This project uses **Genkit** as its primary Generative AI framework.
 1. **Server-Side Intelligence**: Genkit runs on the server (Node.js) to securely handle AI prompts and API keys.
 2. **Type Safety**: It uses Zod to ensure the AI's "thoughts" always follow a strict schema.
 3. **Firebase Integration**: Built for seamless connection with Firestore for leaderboards.
-
-### Static Export Note ⚠️
-If you use `output: 'export'` for a **Static Web Export** (e.g., for Yandex Games):
-- Server Actions will not work. The AI Game Designer will be disabled unless you host the AI flows as a separate API.
-- For the full experience, host on a platform that supports Next.js Server Actions.
 
 ## Getting Started
 
