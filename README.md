@@ -12,6 +12,15 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 - **Multilingual Support**: Available in English and Russian.
 - **Yandex Games Integration**: Fully optimized for the Yandex Games portal.
 
+## Tech Stack Choice: Why Genkit?
+
+This project uses **Genkit** as its primary Generative AI framework. While alternatives like the Vercel AI SDK or LangChain exist, Genkit was chosen for several key reasons:
+
+1. **Firebase Integration**: Genkit is built by the Firebase team, ensuring smooth integration with our Firestore leaderboards and Authentication.
+2. **Type Safety**: It uses Zod to ensure the AI's "thoughts" (like difficulty adjustments) always follow a strict schema, preventing game-breaking logic.
+3. **Optimized for Gemini**: It provides the most direct and efficient path to using Google's Gemini 2.5 Flash models.
+4. **Lightweight Core**: After refactoring, we use only the library core, avoiding complex system dependencies like `esbuild` that can cause issues on older hardware.
+
 ## Getting Started
 
 ### 1. Cloning the Repository
@@ -27,7 +36,7 @@ The game uses Google Gemini for dynamic difficulty. You **must** provide an API 
 
 #### Method A: Using a .env file (Recommended for Local Dev)
 1. Create a `.env` file in the root directory.
-2. Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Get an API key from [Google AI Studio](https://astudio.google.com/app/apikey).
 3. Add it to your `.env`:
    ```env
    GOOGLE_GENAI_API_KEY=your_actual_key_here
@@ -39,9 +48,6 @@ Useful for temporary sessions:
 export GOOGLE_GENAI_API_KEY=your_actual_key_here
 npm run dev
 ```
-
-#### Method C: Production (Vercel/Netlify)
-Add `GOOGLE_GENAI_API_KEY` to your project's environment variables in the hosting provider's dashboard.
 
 ### 3. Install Dependencies
 ```bash
@@ -58,15 +64,9 @@ npm run dev
 ### `FAILED_PRECONDITION: Please pass in the API key`
 This means the `GOOGLE_GENAI_API_KEY` is missing. Ensure the key is correctly set in your `.env` or system environment and restart the dev server.
 
-### `npm error code 1` / `esbuild` / `dyld` symbols
-If you see `_SecTrustCopyCertificateChain` or `esbuild` errors on older macOS (10.14 or below):
-- **Fix**: Run this command to force a fresh build:
+### `dyld: Symbol not found: _SecTrustCopyCertificateChain`
+This usually means you are on an older macOS (10.14 or below). 
+- **Fix**: We have removed the `genkit-cli` dependency to resolve this. Ensure you perform a clean install:
   ```bash
   rm -rf node_modules package-lock.json && npm install
   ```
-
-## Tech Stack
-- **Framework**: Next.js 15 (App Router)
-- **AI SDK**: [Genkit](https://github.com/firebase/genkit)
-- **Database/Auth**: Firebase Firestore & Firebase Auth
-- **Portals**: Yandex Games SDK
