@@ -14,28 +14,39 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 
 ## Getting Started
 
-1. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
-2. **Run Development Server**:
-   ```bash
-   npm run dev
-   ```
+### 1. Cloning the Repository
+If you encounter the error `fatal: could not create work tree dir...`, it usually means you are trying to clone into a directory that doesn't exist or where you lack write permissions. Try cloning directly into your current folder:
+
+```bash
+git clone <repository-url>
+cd Stackup-Frenzy-
+```
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Run Development Server
+```bash
+npm run dev
+```
 
 ## Troubleshooting
 
 ### `npm error code 1` / `esbuild` error
-If you encounter an error related to `esbuild` or `dyld: Symbol not found`:
-- We have removed `genkit-cli` from the project dependencies to resolve this. 
-- The AI features (Dynamic Difficulty) will still work in the application as they run as Server Actions.
-- If you need to use the Genkit Developer UI, we recommend running it in a modern environment (macOS 10.15+ or Linux) or installing `genkit-cli` globally: `npm install -g genkit`.
+If you encounter an error related to `esbuild` (e.g., `dyld: Symbol not found: _SecTrustCopyCertificateChain`):
+- This often happens on older macOS versions (10.14 and below).
+- **Fix**: We have removed `genkit-cli` from the project dependencies to minimize these binary issues.
+- **Clean Reinstall**: Run this command to force a fresh, architecture-specific build:
+  ```bash
+  rm -rf node_modules package-lock.json && npm install
+  ```
 
-### Clean Reinstall
-If you still see errors, try clearing local artifacts:
-```bash
-rm -rf node_modules package-lock.json && npm install
-```
+### Git: `could not create work tree dir`
+- Ensure you are not inside a protected system folder.
+- Check that the destination folder name doesn't contain illegal characters for your OS.
+- Run `pwd` to check your current path and ensure it's a location you can write to (like `/Users/yourname/Projects`).
 
 ## Promo Generation (Python Utility)
 
