@@ -12,23 +12,22 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 - **Multilingual Support**: Available in English and Russian.
 - **Yandex Games Integration**: Fully optimized for the Yandex Games portal with leaderboard support.
 
-## Building and Deployment
+## Building and Output Locations
 
-### 1. Standard Production Build
-To create a production-ready build that supports the AI Game Designer (Server Actions):
-```bash
-npm run build
-```
-- **Output Location**: `.next`
-- **Hosting**: Requires a Node.js environment (e.g., Vercel, Firebase App Hosting, or a custom VPS).
+Next.js has two build modes. The output location depends on which one you use:
+
+### 1. Standard Production Build (Default)
+This mode supports the AI Game Designer (Server Actions).
+- **Command**: `npm run build`
+- **Output Folder**: `.next`
+- **Hosting**: Requires a Node.js environment (Vercel, Firebase App Hosting, etc.).
 
 ### 2. Static Web Export (for Portals)
-For platforms like **Yandex Games** or **Poki** that require a static bundle:
-1. Open `next.config.ts`.
-2. Add `output: 'export'` to the config object.
-3. Run `npm run build`.
-- **Output Location**: `out`
-- **Note**: The AI Game Designer will be disabled in static mode unless the Genkit flows are hosted as a separate API.
+Required for **Yandex Games** or **Poki**.
+- **Setup**: Open `next.config.ts` and add `output: 'export'` to the config object.
+- **Command**: `npm run build`
+- **Output Folder**: `out` (This folder will only be created if `output: 'export'` is set).
+- **Note**: The AI Game Designer will be disabled in this mode because there is no server to run the Genkit logic.
 
 ## Developer Tools
 
