@@ -12,7 +12,30 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 - **Multilingual Support**: Available in English and Russian.
 - **Yandex Games Integration**: Fully optimized for the Yandex Games portal.
 
-## Promo Generation
+## Getting Started
+
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+2. **Run Development Server**:
+   ```bash
+   npm run dev
+   ```
+3. **Run Genkit (AI Services)**:
+   ```bash
+   npm run genkit:dev
+   ```
+
+## Troubleshooting
+
+### `npm error code 1` / `esbuild` error
+If you encounter an error related to `node_modules/esbuild` during installation:
+1. Delete your local modules and lockfile: `rm -rf node_modules package-lock.json`
+2. Run `npm install` again.
+This forces `esbuild` to download the correct binary for your specific OS architecture (e.g., Apple Silicon vs Intel).
+
+## Promo Generation (Python Utility)
 
 We provide a Python utility to help you create store assets for Poki and Yandex Games.
 
