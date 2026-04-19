@@ -68,6 +68,8 @@ export default function StackUpFrenzy() {
   const triggerAIUpdate = useCallback(async (state: GameState) => {
     const duration = Math.floor((Date.now() - startTime) / 1000);
     try {
+      // NOTE: In Static Export (e.g. Yandex Games), Server Actions are not available.
+      // This call will fail unless hosted on a server.
       const result = await dynamicDifficultyAdjustment({
         currentScore: state.score,
         perfectDrops: state.combo,
@@ -77,15 +79,17 @@ export default function StackUpFrenzy() {
         currentBlockDropIntervalMultiplier: difficulty.blockDropIntervalMultiplier,
       });
 
-      setDifficulty({
-        spinSpeedMultiplier: result.spinSpeedMultiplier,
-        blockDropIntervalMultiplier: result.blockDropIntervalMultiplier,
-      });
-      setAiReasoning(result.reasoning);
-      
-      setTimeout(() => setAiReasoning(null), 4000);
+      if (result) {
+        setDifficulty({
+          spinSpeedMultiplier: result.spinSpeedMultiplier,
+          blockDropIntervalMultiplier: result.blockDropIntervalMultiplier,
+        });
+        setAiReasoning(result.reasoning);
+        setTimeout(() => setAiReasoning(null), 4000);
+      }
     } catch (e) {
-      console.error("AI Difficulty Error", e);
+      // Gracefully handle the absence of a Node.js server in static export mode
+      console.warn("AI Designer is offline (Static Export Mode). Using default difficulty.");
     }
   }, [startTime, missedDrops, difficulty]);
 
