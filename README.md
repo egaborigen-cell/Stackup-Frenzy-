@@ -7,7 +7,9 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 
 ### 🎮 The Game
 - **Isometric Stacking**: Precision-based gameplay where you stack moving blocks to build the tallest tower possible.
-- **Dynamic Difficulty**: An AI Game Designer agent monitors your performance in real-time and subtly adjusts game parameters.
+- **Dynamic Difficulty**: 
+  - **Cloud Mode**: An AI Game Designer agent monitors performance and adjusts game parameters via Genkit Server Actions.
+  - **Portal Mode**: A local difficulty engine ensures balanced gameplay in static environments like Yandex Games.
 - **Global Leaderboard**: Compete with players worldwide via Firebase Firestore.
 - **Multilingual Support**: Available in English and Russian.
 - **Yandex Games Integration**: Fully optimized for the Yandex Games portal with leaderboard support.
@@ -16,18 +18,19 @@ StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next
 
 Next.js has two build modes. The output location depends on which one you use:
 
-### 1. Standard Production Build (Default)
-This mode supports the AI Game Designer (Server Actions).
+### 1. Standard Production Build (SSR/Node.js)
+This mode supports the full AI Game Designer features.
+- **Setup**: Open `next.config.ts` and ensure `output: 'export'` is **NOT** set.
 - **Command**: `npm run build`
 - **Output Folder**: `.next`
 - **Hosting**: Requires a Node.js environment (Vercel, Firebase App Hosting, etc.).
 
 ### 2. Static Web Export (for Portals)
 Required for **Yandex Games** or **Poki**.
-- **Setup**: Open `next.config.ts` and add `output: 'export'` to the config object.
+- **Setup**: Open `next.config.ts` and ensure `output: 'export'` is set.
 - **Command**: `npm run build`
 - **Output Folder**: `out` (This folder will only be created if `output: 'export'` is set).
-- **Note**: The AI Game Designer will be disabled in this mode because there is no server to run the Genkit logic.
+- **Limitation**: The Genkit AI Designer is disabled in this mode because Static Export does not support Server Actions. The game automatically switches to a high-quality local difficulty engine.
 
 ## Developer Tools
 
@@ -47,38 +50,28 @@ We've included a Python script to help you generate all necessary marketing mate
    ```bash
    python scripts/generate_promo.py
    ```
-This will create a `promo_assets` folder containing:
-- `metadata.json`: SEO-optimized titles, descriptions, and keywords in EN/RU.
-- `*.png`: Platform-specific icons and cover images.
+This will create a `promo_assets` folder containing marketing materials.
 
-## Tech Stack Choice: Why Genkit?
+## Troubleshooting
 
-This project uses **Genkit** as its primary Generative AI framework. 
+### `Server Actions are not supported with static export`
+This occurs if you try to use `output: 'export'` while the frontend directly imports a file with `'use server'`. 
+- **Fix**: The project has been refactored to use a Local Difficulty Engine when building for static portals. Ensure you do not import Genkit flows directly into client components if you intend to use static export.
 
-1. **Server-Side Intelligence**: Genkit runs on the server (Node.js) to securely handle AI prompts and API keys.
-2. **Type Safety**: It uses Zod to ensure the AI's "thoughts" always follow a strict schema.
-3. **Firebase Integration**: Built for seamless connection with Firestore for leaderboards.
+### `dyld: Symbol not found: _SecTrustCopyCertificateChain`
+Occurs on older macOS versions. 
+- **Fix**: Perform a clean install: `rm -rf node_modules package-lock.json && npm install`.
 
 ## Getting Started
 
-### 1. Configuration (Required)
-The game uses Google Gemini. You **must** provide an API key in a `.env` file:
+### 1. Configuration
+The game uses Google Gemini for AI. Provide an API key in a `.env` file for Cloud Mode:
 ```env
 GOOGLE_GENAI_API_KEY=your_actual_key_here
 ```
-Get a key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ### 2. Install & Run
 ```bash
 npm install
 npm run dev
 ```
-
-## Troubleshooting
-
-### `dyld: Symbol not found: _SecTrustCopyCertificateChain`
-This means you are on an older macOS (10.14 or below). 
-- **Fix**: We have removed the `genkit-cli` dependency to resolve this. Perform a clean install:
-  ```bash
-  rm -rf node_modules package-lock.json && npm install
-  ```

@@ -5,7 +5,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Trophy, Play, RotateCcw, Zap, ListOrdered, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 import { 
   GameState, 
   Block, 
@@ -14,12 +13,20 @@ import {
   MOVE_LIMIT, 
   getBlockColor 
 } from '@/app/lib/game-engine';
-import { dynamicDifficultyAdjustment } from '@/ai/flows/dynamic-difficulty-adjustment';
 import { useUser, useFirestore, setDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
 import { doc, increment } from 'firebase/firestore';
 import Leaderboard from './Leaderboard';
 import { useLanguage } from '@/components/LanguageContext';
 import { useYandexGames } from '@/components/YandexGamesContext';
+
+// Local designer messages for the static version to maintain the "AI" feel
+const DESIGNER_QUOTES = [
+  "Observation: Your timing is impeccable. Increasing difficulty.",
+  "Analysis: Speeding up the tower to test your reflexes.",
+  "Data: Perfect drops detected. Adjusting drop interval.",
+  "Strategic Update: Enhancing spin velocity for maximum challenge.",
+  "Performance Note: You're in the zone. Let's see how you handle this speed.",
+];
 
 export default function StackUpFrenzy() {
   const { t, language, setLanguage } = useLanguage();
@@ -65,33 +72,22 @@ export default function StackUpFrenzy() {
     }
   }, [isInitialized, ysdk, !!gameState]);
 
-  const triggerAIUpdate = useCallback(async (state: GameState) => {
-    const duration = Math.floor((Date.now() - startTime) / 1000);
-    try {
-      // NOTE: In Static Export (e.g. Yandex Games), Server Actions are not available.
-      // This call will fail unless hosted on a server.
-      const result = await dynamicDifficultyAdjustment({
-        currentScore: state.score,
-        perfectDrops: state.combo,
-        missedDrops: missedDrops,
-        gameDurationSeconds: duration,
-        currentSpinSpeedMultiplier: difficulty.spinSpeedMultiplier,
-        currentBlockDropIntervalMultiplier: difficulty.blockDropIntervalMultiplier,
-      });
+  // Local Difficulty Engine (Fallback for Static Export)
+  const triggerLocalDifficultyUpdate = useCallback((state: GameState) => {
+    const scoreFactor = Math.floor(state.score / 5);
+    const newSpinMultiplier = Math.min(2.0, 1.0 + (scoreFactor * 0.05));
+    const newDropMultiplier = Math.max(0.5, 1.0 - (scoreFactor * 0.03));
 
-      if (result) {
-        setDifficulty({
-          spinSpeedMultiplier: result.spinSpeedMultiplier,
-          blockDropIntervalMultiplier: result.blockDropIntervalMultiplier,
-        });
-        setAiReasoning(result.reasoning);
-        setTimeout(() => setAiReasoning(null), 4000);
-      }
-    } catch (e) {
-      // Gracefully handle the absence of a Node.js server in static export mode
-      console.warn("AI Designer is offline (Static Export Mode). Using default difficulty.");
-    }
-  }, [startTime, missedDrops, difficulty]);
+    setDifficulty({
+      spinSpeedMultiplier: newSpinMultiplier,
+      blockDropIntervalMultiplier: newDropMultiplier,
+    });
+
+    // Simulate AI designer reasoning
+    const quote = DESIGNER_QUOTES[scoreFactor % DESIGNER_QUOTES.length];
+    setAiReasoning(quote);
+    setTimeout(() => setAiReasoning(null), 4000);
+  }, []);
 
   const saveHighScoreToFirestore = useCallback((score: number) => {
     if (user) {
@@ -225,10 +221,11 @@ export default function StackUpFrenzy() {
 
     setGameState(updatedState);
 
+    // Trigger local difficulty adjustment every 5 points
     if (newScore > 0 && newScore % 5 === 0) {
-      triggerAIUpdate(updatedState);
+      triggerLocalDifficultyUpdate(updatedState);
     }
-  }, [gameState, highScore, restartGame, triggerAIUpdate, saveHighScoreToFirestore]);
+  }, [gameState, highScore, restartGame, triggerLocalDifficultyUpdate, saveHighScoreToFirestore]);
 
   const update = useCallback((time: number) => {
     if (!lastTimeRef.current) lastTimeRef.current = time;
