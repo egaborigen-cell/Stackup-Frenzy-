@@ -102,6 +102,7 @@ export default function StackUpFrenzy() {
     }
 
     if (ysdk) {
+      // Use the plural getLeaderboards() as per Yandex SDK v2 deprecation notice
       ysdk.getLeaderboards()
         .then((lb: any) => {
           lb.setLeaderboardScore('leaderboard', score);
