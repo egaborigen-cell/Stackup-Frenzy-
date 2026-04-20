@@ -55,13 +55,14 @@ export default function StackUpFrenzy() {
 
   useEffect(() => {
     if (isInitialized && ysdk && gameState) {
-      ysdk.features.LoadingAPI?.ready();
+      if (ysdk.features && ysdk.features.LoadingAPI) {
+        ysdk.features.LoadingAPI.ready();
+      }
     }
   }, [isInitialized, ysdk, !!gameState]);
 
   const triggerLocalDifficultyUpdate = useCallback((state: GameState) => {
     const scoreFactor = Math.floor(state.score / 5);
-    // Increase multipliers to make it harder
     const newSpinMultiplier = Math.min(2.5, 1.0 + (scoreFactor * 0.1));
     const newMoveMultiplier = Math.min(2.0, 1.0 + (scoreFactor * 0.07));
 
@@ -76,7 +77,7 @@ export default function StackUpFrenzy() {
   }, []);
 
   const saveHighScoreToYandex = useCallback((score: number) => {
-    if (ysdk) {
+    if (ysdk && ysdk.getLeaderboards) {
       ysdk.getLeaderboards()
         .then((lb: any) => {
           lb.setLeaderboardScore('leaderboard', score);
@@ -209,7 +210,6 @@ export default function StackUpFrenzy() {
     setGameState(prev => {
       if (!prev || !prev.isStarted || prev.isGameOver) return prev;
 
-      // Difficulty multipliers increase the base speeds
       const speed = (0.2 + (prev.score * 0.01)) * deltaTime * difficulty.movementSpeedMultiplier;
       const spinSpeed = (0.001 + (prev.score * 0.0001)) * deltaTime * difficulty.spinSpeedMultiplier;
 
@@ -319,7 +319,7 @@ export default function StackUpFrenzy() {
   }, [gameState]);
 
   const showLeaderboard = () => {
-    if (ysdk) {
+    if (ysdk && ysdk.getLeaderboards) {
       ysdk.getLeaderboards().then((lb: any) => lb.showLeaderboard());
     }
   };
@@ -358,7 +358,7 @@ export default function StackUpFrenzy() {
             >
               <Languages className="w-4 h-4 text-primary" />
             </Button>
-            {isInitialized && ysdk && (
+            {isInitialized && ysdk && ysdk.getLeaderboards && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -427,7 +427,7 @@ export default function StackUpFrenzy() {
               {t('retry')}
             </Button>
             
-            {isInitialized && ysdk && (
+            {isInitialized && ysdk && ysdk.getLeaderboards && (
               <Button 
                 variant="ghost"
                 onClick={(e) => { e.stopPropagation(); showLeaderboard(); }}

@@ -23,7 +23,7 @@ export default function RootLayout({
           strategy="beforeInteractive"
         />
       </head>
-      <body className="font-body antialiased selection:bg-primary/30">
+      <body className="antialiased selection:bg-primary/30 font-sans">
         <LanguageProvider>
           <YandexGamesProvider>
             {children}
