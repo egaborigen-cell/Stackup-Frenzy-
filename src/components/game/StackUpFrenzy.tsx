@@ -13,13 +13,9 @@ import {
   MOVE_LIMIT, 
   getBlockColor 
 } from '@/app/lib/game-engine';
-import { useUser, useFirestore, setDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
-import { doc, increment } from 'firebase/firestore';
-import Leaderboard from './Leaderboard';
 import { useLanguage } from '@/components/LanguageContext';
 import { useYandexGames } from '@/components/YandexGamesContext';
 
-// Local designer messages for the static version to maintain the "AI" feel
 const DESIGNER_QUOTES = [
   "Observation: Your timing is impeccable. Increasing difficulty.",
   "Analysis: Speeding up the tower to test your reflexes.",
@@ -36,7 +32,6 @@ export default function StackUpFrenzy() {
   const [perfectDrops, setPerfectDrops] = useState(0);
   const [missedDrops, setMissedDrops] = useState(0);
   const [startTime, setStartTime] = useState(0);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [difficulty, setDifficulty] = useState({
     spinSpeedMultiplier: 1.0,
     blockDropIntervalMultiplier: 1.0,
@@ -47,15 +42,7 @@ export default function StackUpFrenzy() {
   const requestRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
 
-  const { user, isUserLoading } = useUser();
-  const db = useFirestore();
-  const auth = useAuth();
-
   useEffect(() => {
-    if (!user && !isUserLoading) {
-      initiateAnonymousSignIn(auth);
-    }
-    
     const saved = localStorage.getItem('stackup-frenzy-highscore');
     if (saved) {
       const parsed = parseInt(saved, 10);
@@ -64,7 +51,7 @@ export default function StackUpFrenzy() {
     } else {
       setGameState(createInitialState(0));
     }
-  }, [user, isUserLoading, auth]);
+  }, []);
 
   useEffect(() => {
     if (isInitialized && ysdk && gameState) {
@@ -72,7 +59,6 @@ export default function StackUpFrenzy() {
     }
   }, [isInitialized, ysdk, !!gameState]);
 
-  // Local Difficulty Engine (Fallback for Static Export)
   const triggerLocalDifficultyUpdate = useCallback((state: GameState) => {
     const scoreFactor = Math.floor(state.score / 5);
     const newSpinMultiplier = Math.min(2.0, 1.0 + (scoreFactor * 0.05));
@@ -83,26 +69,13 @@ export default function StackUpFrenzy() {
       blockDropIntervalMultiplier: newDropMultiplier,
     });
 
-    // Simulate AI designer reasoning
     const quote = DESIGNER_QUOTES[scoreFactor % DESIGNER_QUOTES.length];
     setAiReasoning(quote);
     setTimeout(() => setAiReasoning(null), 4000);
   }, []);
 
-  const saveHighScoreToFirestore = useCallback((score: number) => {
-    if (user) {
-      const playerRef = doc(db, 'playerProfiles', user.uid);
-      setDocumentNonBlocking(playerRef, {
-        id: user.uid,
-        username: user.displayName || `Player ${user.uid.slice(0, 4)}`,
-        highScore: score,
-        lastPlayedAt: new Date().toISOString(),
-        totalGamesPlayed: increment(1),
-      }, { merge: true });
-    }
-
+  const saveHighScore = useCallback((score: number) => {
     if (ysdk) {
-      // Use the plural getLeaderboards() as per Yandex SDK v2 deprecation notice
       ysdk.getLeaderboards()
         .then((lb: any) => {
           lb.setLeaderboardScore('leaderboard', score);
@@ -111,7 +84,7 @@ export default function StackUpFrenzy() {
           console.error('Yandex Leaderboard Error:', err);
         });
     }
-  }, [user, db, ysdk]);
+  }, [ysdk]);
 
   const restartGame = useCallback(() => {
     const newState = createInitialState(highScore);
@@ -157,7 +130,7 @@ export default function StackUpFrenzy() {
         setGameState(prev => {
           if (!prev) return null;
           const endState = { ...prev, isGameOver: true };
-          saveHighScoreToFirestore(prev.score);
+          saveHighScore(prev.score);
           return endState;
         });
         return;
@@ -174,7 +147,7 @@ export default function StackUpFrenzy() {
         setGameState(prev => {
           if (!prev) return null;
           const endState = { ...prev, isGameOver: true };
-          saveHighScoreToFirestore(prev.score);
+          saveHighScore(prev.score);
           return endState;
         });
         return;
@@ -222,11 +195,10 @@ export default function StackUpFrenzy() {
 
     setGameState(updatedState);
 
-    // Trigger local difficulty adjustment every 5 points
     if (newScore > 0 && newScore % 5 === 0) {
       triggerLocalDifficultyUpdate(updatedState);
     }
-  }, [gameState, highScore, restartGame, triggerLocalDifficultyUpdate, saveHighScoreToFirestore]);
+  }, [gameState, highScore, restartGame, triggerLocalDifficultyUpdate, saveHighScore]);
 
   const update = useCallback((time: number) => {
     if (!lastTimeRef.current) lastTimeRef.current = time;
@@ -344,6 +316,12 @@ export default function StackUpFrenzy() {
     return () => window.removeEventListener('resize', resize);
   }, [gameState]);
 
+  const showLeaderboard = () => {
+    if (ysdk) {
+      ysdk.getLeaderboards().then((lb: any) => lb.showLeaderboard());
+    }
+  };
+
   if (!gameState) return null;
 
   return (
@@ -378,15 +356,17 @@ export default function StackUpFrenzy() {
             >
               <Languages className="w-4 h-4 text-primary" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4"
-              onClick={(e) => { e.stopPropagation(); setShowLeaderboard(true); }}
-            >
-              <ListOrdered className="w-4 h-4 mr-2 text-primary" />
-              {t('leaderboard')}
-            </Button>
+            {isInitialized && ysdk && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 rounded-full h-10 px-4"
+                onClick={(e) => { e.stopPropagation(); showLeaderboard(); }}
+              >
+                <ListOrdered className="w-4 h-4 mr-2 text-primary" />
+                {t('leaderboard')}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -423,7 +403,7 @@ export default function StackUpFrenzy() {
 
       {gameState.isGameOver && (
         <div className="absolute inset-0 z-30 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in zoom-in duration-300">
-          <Card className="w-full max-w-sm p-8 text-center space-y-8 shadow-2xl border-none">
+          <Card className="w-full max-sm p-8 text-center space-y-8 shadow-2xl border-none">
             <div className="space-y-2">
               <h3 className="text-muted-foreground font-bold tracking-widest uppercase text-sm">{t('gameOver')}</h3>
               <p className="text-6xl font-black text-primary">{gameState.score}</p>
@@ -445,19 +425,17 @@ export default function StackUpFrenzy() {
               {t('retry')}
             </Button>
             
-            <Button 
-              variant="ghost"
-              onClick={(e) => { e.stopPropagation(); setShowLeaderboard(true); }}
-              className="w-full text-muted-foreground font-bold h-12 hover:bg-muted/50"
-            >
-              {t('viewLeaderboard')}
-            </Button>
+            {isInitialized && ysdk && (
+              <Button 
+                variant="ghost"
+                onClick={(e) => { e.stopPropagation(); showLeaderboard(); }}
+                className="w-full text-muted-foreground font-bold h-12 hover:bg-muted/50"
+              >
+                {t('viewLeaderboard')}
+              </Button>
+            )}
           </Card>
         </div>
-      )}
-
-      {showLeaderboard && (
-        <Leaderboard onClose={() => setShowLeaderboard(false)} currentUserId={user?.uid} />
       )}
 
       {gameState.isStarted && !gameState.isGameOver && gameState.score < 2 && (

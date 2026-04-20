@@ -1,6 +1,6 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { LanguageProvider } from '@/components/LanguageContext';
 import { YandexGamesProvider } from '@/components/YandexGamesContext';
 import Script from 'next/script';
@@ -27,13 +27,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased selection:bg-primary/30">
-        <FirebaseClientProvider>
-          <LanguageProvider>
-            <YandexGamesProvider>
-              {children}
-            </YandexGamesProvider>
-          </LanguageProvider>
-        </FirebaseClientProvider>
+        <LanguageProvider>
+          <YandexGamesProvider>
+            {children}
+          </YandexGamesProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
