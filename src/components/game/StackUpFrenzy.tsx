@@ -19,7 +19,7 @@ import { useYandexGames } from '@/components/YandexGamesContext';
 const DESIGNER_QUOTES = [
   "Observation: Your timing is impeccable. Increasing difficulty.",
   "Analysis: Speeding up the tower to test your reflexes.",
-  "Data: Perfect drops detected. Adjusting drop interval.",
+  "Data: Perfect drops detected. Accelerating block movement.",
   "Strategic Update: Enhancing spin velocity for maximum challenge.",
   "Performance Note: You're in the zone. Let's see how you handle this speed.",
 ];
@@ -34,7 +34,7 @@ export default function StackUpFrenzy() {
   const [startTime, setStartTime] = useState(0);
   const [difficulty, setDifficulty] = useState({
     spinSpeedMultiplier: 1.0,
-    blockDropIntervalMultiplier: 1.0,
+    movementSpeedMultiplier: 1.0,
   });
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
 
@@ -61,12 +61,13 @@ export default function StackUpFrenzy() {
 
   const triggerLocalDifficultyUpdate = useCallback((state: GameState) => {
     const scoreFactor = Math.floor(state.score / 5);
-    const newSpinMultiplier = Math.min(2.0, 1.0 + (scoreFactor * 0.05));
-    const newDropMultiplier = Math.max(0.5, 1.0 - (scoreFactor * 0.03));
+    // Increase multipliers to make it harder
+    const newSpinMultiplier = Math.min(2.5, 1.0 + (scoreFactor * 0.1));
+    const newMoveMultiplier = Math.min(2.0, 1.0 + (scoreFactor * 0.07));
 
     setDifficulty({
       spinSpeedMultiplier: newSpinMultiplier,
-      blockDropIntervalMultiplier: newDropMultiplier,
+      movementSpeedMultiplier: newMoveMultiplier,
     });
 
     const quote = DESIGNER_QUOTES[scoreFactor % DESIGNER_QUOTES.length];
@@ -74,7 +75,7 @@ export default function StackUpFrenzy() {
     setTimeout(() => setAiReasoning(null), 4000);
   }, []);
 
-  const saveHighScore = useCallback((score: number) => {
+  const saveHighScoreToYandex = useCallback((score: number) => {
     if (ysdk) {
       ysdk.getLeaderboards()
         .then((lb: any) => {
@@ -92,7 +93,7 @@ export default function StackUpFrenzy() {
     setPerfectDrops(0);
     setMissedDrops(0);
     setStartTime(Date.now());
-    setDifficulty({ spinSpeedMultiplier: 1.0, blockDropIntervalMultiplier: 1.0 });
+    setDifficulty({ spinSpeedMultiplier: 1.0, movementSpeedMultiplier: 1.0 });
     setAiReasoning(null);
   }, [highScore]);
 
@@ -130,7 +131,7 @@ export default function StackUpFrenzy() {
         setGameState(prev => {
           if (!prev) return null;
           const endState = { ...prev, isGameOver: true };
-          saveHighScore(prev.score);
+          saveHighScoreToYandex(prev.score);
           return endState;
         });
         return;
@@ -147,7 +148,7 @@ export default function StackUpFrenzy() {
         setGameState(prev => {
           if (!prev) return null;
           const endState = { ...prev, isGameOver: true };
-          saveHighScore(prev.score);
+          saveHighScoreToYandex(prev.score);
           return endState;
         });
         return;
@@ -198,7 +199,7 @@ export default function StackUpFrenzy() {
     if (newScore > 0 && newScore % 5 === 0) {
       triggerLocalDifficultyUpdate(updatedState);
     }
-  }, [gameState, highScore, restartGame, triggerLocalDifficultyUpdate, saveHighScore]);
+  }, [gameState, highScore, restartGame, triggerLocalDifficultyUpdate, saveHighScoreToYandex]);
 
   const update = useCallback((time: number) => {
     if (!lastTimeRef.current) lastTimeRef.current = time;
@@ -208,7 +209,8 @@ export default function StackUpFrenzy() {
     setGameState(prev => {
       if (!prev || !prev.isStarted || prev.isGameOver) return prev;
 
-      const speed = (0.2 + (prev.score * 0.01)) * deltaTime * difficulty.blockDropIntervalMultiplier;
+      // Difficulty multipliers increase the base speeds
+      const speed = (0.2 + (prev.score * 0.01)) * deltaTime * difficulty.movementSpeedMultiplier;
       const spinSpeed = (0.001 + (prev.score * 0.0001)) * deltaTime * difficulty.spinSpeedMultiplier;
 
       let nextX = prev.currentBlock.x;
