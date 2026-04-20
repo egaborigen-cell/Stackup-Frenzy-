@@ -267,37 +267,67 @@ export default function StackUpFrenzy() {
         const rz = x * Math.sin(angle) + z * Math.cos(angle);
         return {
           px: centerX + rx - rz,
-          py: centerY - (y - cameraY) - (rx + rz) * 0.5
+          py: centerY - (y - cameraY) - (rx + rz) * 0.5,
+          depth: rz // Return depth for sorting
         };
+      };
+
+      const shadeColor = (col: string, amt: number) => {
+        const num = parseInt(col.replace('#', ''), 16);
+        const r = Math.max(0, Math.min(255, (num >> 16) + amt));
+        const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
+        const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+        return `#${(g | (b << 8) | (r << 16)).toString(16).padStart(6, '0')}`;
       };
 
       const drawBlock = (block: Block) => {
         const { x, z, width, depth, y, color } = block;
-        const points = [
-          project(x - width/2, y, z - depth/2),
-          project(x + width/2, y, z - depth/2),
-          project(x + width/2, y, z + depth/2),
-          project(x - width/2, y, z + depth/2),
-          project(x - width/2, y + BLOCK_HEIGHT, z - depth/2),
-          project(x + width/2, y + BLOCK_HEIGHT, z - depth/2),
-          project(x + width/2, y + BLOCK_HEIGHT, z + depth/2),
-          project(x - width/2, y + BLOCK_HEIGHT, z + depth/2),
+        
+        // Define 8 vertices of the block
+        const v = [
+          project(x - width/2, y, z - depth/2), // 0: bottom-back-left
+          project(x + width/2, y, z - depth/2), // 1: bottom-back-right
+          project(x + width/2, y, z + depth/2), // 2: bottom-front-right
+          project(x - width/2, y, z + depth/2), // 3: bottom-front-left
+          project(x - width/2, y + BLOCK_HEIGHT, z - depth/2), // 4: top-back-left
+          project(x + width/2, y + BLOCK_HEIGHT, z - depth/2), // 5: top-back-right
+          project(x + width/2, y + BLOCK_HEIGHT, z + depth/2), // 6: top-front-right
+          project(x - width/2, y + BLOCK_HEIGHT, z + depth/2), // 7: top-front-left
         ];
 
-        const drawFace = (indices: number[], faceColor: string) => {
+        // Define 6 faces and their vertex indices
+        // Order: Bottom, Back, Right, Front, Left, Top
+        const faces = [
+          { indices: [0, 1, 2, 3], color: shadeColor(color, -60) }, // Bottom
+          { indices: [0, 1, 5, 4], color: shadeColor(color, -20) }, // Back
+          { indices: [1, 2, 6, 5], color: shadeColor(color, -10) }, // Right
+          { indices: [2, 3, 7, 6], color: shadeColor(color, -20) }, // Front
+          { indices: [3, 0, 4, 7], color: shadeColor(color, -40) }, // Left
+          { indices: [4, 5, 6, 7], color: color },                 // Top
+        ];
+
+        // Painter's algorithm: Sort faces by average depth
+        faces.sort((a, b) => {
+          const depthA = a.indices.reduce((sum, idx) => sum + v[idx].depth, 0) / 4;
+          const depthB = b.indices.reduce((sum, idx) => sum + v[idx].depth, 0) / 4;
+          return depthA - depthB; // Back-to-front
+        });
+
+        faces.forEach(face => {
           ctx.beginPath();
-          ctx.moveTo(points[indices[0]].px, points[indices[0]].py);
-          for (let i = 1; i < indices.length; i++) {
-            ctx.lineTo(points[indices[i]].px, points[indices[i]].py);
+          ctx.moveTo(v[face.indices[0]].px, v[face.indices[0]].py);
+          for (let i = 1; i < face.indices.length; i++) {
+            ctx.lineTo(v[face.indices[i]].px, v[face.indices[i]].py);
           }
           ctx.closePath();
-          ctx.fillStyle = faceColor;
+          ctx.fillStyle = face.color;
           ctx.fill();
-        };
-
-        drawFace([0, 1, 5, 4], color);
-        drawFace([1, 2, 6, 5], color); 
-        drawFace([4, 5, 6, 7], color); 
+          
+          // Subtle border for definition
+          ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
       };
 
       gameState.blocks.forEach((b, i) => {
