@@ -77,11 +77,8 @@ export default function StackUpFrenzy() {
   }, []);
 
   const saveHighScoreToYandex = useCallback((score: number) => {
-    if (ysdk && ysdk.getLeaderboards) {
-      ysdk.getLeaderboards()
-        .then((lb: any) => {
-          lb.setLeaderboardScore('leaderboard', score);
-        })
+    if (ysdk && ysdk.leaderboards) {
+      ysdk.leaderboards.setLeaderboardScore('leaderboard', score)
         .catch((err: any) => {
           console.error('Yandex Leaderboard Error:', err);
         });
@@ -319,8 +316,8 @@ export default function StackUpFrenzy() {
   }, [gameState]);
 
   const showLeaderboard = () => {
-    if (ysdk && ysdk.getLeaderboards) {
-      ysdk.getLeaderboards().then((lb: any) => lb.showLeaderboard());
+    if (ysdk && ysdk.leaderboards) {
+      ysdk.leaderboards.showLeaderboard();
     }
   };
 
@@ -358,7 +355,7 @@ export default function StackUpFrenzy() {
             >
               <Languages className="w-4 h-4 text-primary" />
             </Button>
-            {isInitialized && ysdk && ysdk.getLeaderboards && (
+            {isInitialized && ysdk && ysdk.leaderboards && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -427,7 +424,7 @@ export default function StackUpFrenzy() {
               {t('retry')}
             </Button>
             
-            {isInitialized && ysdk && ysdk.getLeaderboards && (
+            {isInitialized && ysdk && ysdk.leaderboards && (
               <Button 
                 variant="ghost"
                 onClick={(e) => { e.stopPropagation(); showLeaderboard(); }}
