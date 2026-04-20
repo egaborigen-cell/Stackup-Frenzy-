@@ -1,6 +1,8 @@
 
 # StackUp Frenzy 🧱
 
+**Short Description:** A high-energy isometric block-stacking challenge! Test your reflexes as the tower spins and blocks drop faster. Build the ultimate skyscraper and dominate the leaderboards!
+
 StackUp Frenzy is a high-energy, hypercasual block-stacking game built with Next.js and optimized for web portals like Yandex Games and Poki.
 
 ## Difficulty Engine Design 🧠
@@ -29,7 +31,7 @@ This project is optimized for **Static Web Export**, required for platforms like
 ## Configuration ⚙️
 
 ### Google AI Integration
-The game uses Google Gemini (via Genkit) for server-side analytics and marketing generation.
+The game uses Google Gemini (via Genkit) for server-side analytics and marketing generation (local difficulty is used for static exports).
 - Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 - Add it to your `.env` file:
   ```env

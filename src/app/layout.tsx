@@ -7,7 +7,7 @@ import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'StackUp Frenzy',
-  description: 'A hypercasual block-stacking challenge!',
+  description: 'Stack blocks, build high, and beat the spinning tower in this high-energy isometric stacking challenge!',
 };
 
 export default function RootLayout({
