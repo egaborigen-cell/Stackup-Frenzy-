@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -268,7 +267,7 @@ export default function StackUpFrenzy() {
         return {
           px: centerX + rx - rz,
           py: centerY - (y - cameraY) - (rx + rz) * 0.5,
-          depth: rz // Return depth for sorting
+          depth: rz
         };
       };
 
@@ -277,13 +276,12 @@ export default function StackUpFrenzy() {
         const r = Math.max(0, Math.min(255, (num >> 16) + amt));
         const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
         const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
-        return `#${(g | (b << 8) | (r << 16)).toString(16).padStart(6, '0')}`;
+        return `#${(b | (g << 8) | (r << 16)).toString(16).padStart(6, '0')}`;
       };
 
       const drawBlock = (block: Block) => {
         const { x, z, width, depth, y, color } = block;
         
-        // Define 8 vertices of the block
         const v = [
           project(x - width/2, y, z - depth/2), // 0: bottom-back-left
           project(x + width/2, y, z - depth/2), // 1: bottom-back-right
@@ -295,8 +293,6 @@ export default function StackUpFrenzy() {
           project(x - width/2, y + BLOCK_HEIGHT, z + depth/2), // 7: top-front-left
         ];
 
-        // Define 6 faces and their vertex indices
-        // Order: Bottom, Back, Right, Front, Left, Top
         const faces = [
           { indices: [0, 1, 2, 3], color: shadeColor(color, -60) }, // Bottom
           { indices: [0, 1, 5, 4], color: shadeColor(color, -20) }, // Back
@@ -306,11 +302,10 @@ export default function StackUpFrenzy() {
           { indices: [4, 5, 6, 7], color: color },                 // Top
         ];
 
-        // Painter's algorithm: Sort faces by average depth
         faces.sort((a, b) => {
           const depthA = a.indices.reduce((sum, idx) => sum + v[idx].depth, 0) / 4;
           const depthB = b.indices.reduce((sum, idx) => sum + v[idx].depth, 0) / 4;
-          return depthA - depthB; // Back-to-front
+          return depthA - depthB;
         });
 
         faces.forEach(face => {
@@ -323,8 +318,7 @@ export default function StackUpFrenzy() {
           ctx.fillStyle = face.color;
           ctx.fill();
           
-          // Subtle border for definition
-          ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+          ctx.strokeStyle = 'rgba(0,0,0,0.1)';
           ctx.lineWidth = 1;
           ctx.stroke();
         });

@@ -29,10 +29,10 @@ export const MOVE_LIMIT = 300;
 export const COLORS = [
   '#FA7C33', // Primary Orange
   '#FA72BB', // Accent Pink
-  '#FF9F67',
-  '#FF85B3',
-  '#FFC18E',
-  '#FFA1D4',
+  '#33D7FA', // Cyber Blue
+  '#B672FA', // Neon Purple
+  '#72FA7C', // Lime Green
+  '#FAE033', // Electric Yellow
 ];
 
 export function getBlockColor(index: number): string {
@@ -46,7 +46,7 @@ export function createInitialState(highScore: number = 0): GameState {
     width: INITIAL_BLOCK_SIZE,
     depth: INITIAL_BLOCK_SIZE,
     y: INITIAL_Y,
-    color: '#DDD',
+    color: '#333333', // Dark Slate Base
   };
 
   return {
